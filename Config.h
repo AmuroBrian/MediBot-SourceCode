@@ -24,21 +24,16 @@
 // --- Constants ---
 #define MAX_ROOMS 4
 #define MAX_QUEUE_SIZE 10
-#define AVOID_DISTANCE_CM 15 // Distance to stop and avoid obstacle
+#define AVOID_DISTANCE_CM 5 // Distance to stop and avoid obstacle (3-5 cm)
 #define HALLWAY_WIDTH_CM 80  // Typical hallway width
 
 // --- Robot States ---
 enum RobotState {
     STATE_IDLE,
     STATE_PLAN_ROUTE,
-    STATE_MOVE_FORWARD,
-    STATE_TURN_LEFT,
-    STATE_TURN_RIGHT,
+    STATE_EXECUTE_CMD,
     STATE_AVOID_OBSTACLE,
-    STATE_SEARCH_ROOM,
-    STATE_ENTER_ROOM,
     STATE_DELIVER_MEDICINE,
-    STATE_EXIT_ROOM,
     STATE_WAITING_FOR_ACK,
     STATE_NEXT_ROOM,
     STATE_RETURN_HOME,

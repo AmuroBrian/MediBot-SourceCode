@@ -53,14 +53,14 @@ void loop() {
     if (currentMillis - lastScrollTime >= 400) {
         lastScrollTime = currentMillis;
         lcd.clear();
-        lcd.setCursor(scrollPos, 0);
-        lcd.print("MediBot");
-        lcd.setCursor(0, 1);
-        
         if (fsmManager.getCurrentState() == STATE_WAITING_FOR_ACK) {
+            lcd.print("Click Button...");
+            lcd.setCursor(0, 1);
             lcd.print("Open Comp: ");
             lcd.print(fsmManager.getCurrentCompartment());
         } else {
+            lcd.print("MediBot");
+            lcd.setCursor(0, 1);
             lcd.print(fsmManager.getCurrentStateString());
         }
         

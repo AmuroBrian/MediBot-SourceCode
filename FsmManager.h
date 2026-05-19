@@ -71,10 +71,9 @@ private:
     unsigned long lastButtonPressTime = 0;
     unsigned long timeInState() const;
     
-    // Grid Coordinates
-    int currentX;
-    int currentY;
-    int currentHeading; // 0=North, 1=East, 2=South, 3=West
+    // Linear Map Tracking
+    int currentRow;
+    bool isFacingRoom;
 
     // Command Queue
     NavCommand commandQueue[MAX_NAV_COMMANDS];

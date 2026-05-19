@@ -8,7 +8,7 @@ FsmManager::FsmManager(BleManager* ble, SensorManager* sensor, NavigationManager
       currentState(STATE_IDLE), previousState(STATE_IDLE), 
       statusMessage("Ready"), numRoomsInQueue(0), currentQueueIndex(0), 
       currentRoom(0), currentCompartment(0), stateStartTime(0),
-      currentX(2), currentY(0), currentHeading(2), // Home coordinates, facing South
+      currentRow(0), isFacingRoom(false),
       cmdQueueSize(0), currentCmdIndex(0), isCommandPaused(false) {}
 
 void FsmManager::init() {
@@ -138,13 +138,12 @@ void FsmManager::checkPhysicalButton() {
 // PATHFINDING & COMMAND QUEUE
 // ---------------------------------------------------------
 
-struct Point { int x; int y; };
-Point getRoomLocation(int roomNumber) {
-    if (roomNumber == 1) return {0, 1};
-    if (roomNumber == 2) return {4, 1};
-    if (roomNumber == 3) return {0, 3};
-    if (roomNumber == 4) return {4, 3};
-    return {2, 0}; // Home
+int getRoomRow(int roomNumber) {
+    if (roomNumber == 1) return 1;
+    if (roomNumber == 2) return 3;
+    if (roomNumber == 3) return 5;
+    if (roomNumber == 4) return 7;
+    return 0; // Home is Row 0
 }
 
 void FsmManager::addCommand(NavCommandType type, unsigned long duration) {
@@ -159,59 +158,40 @@ void FsmManager::generatePath(int targetRoom) {
     cmdQueueSize = 0;
     currentCmdIndex = 0;
     
-    Point target = getRoomLocation(targetRoom);
-    int dx = target.x - currentX;
-    int dy = target.y - currentY;
+    int targetRow = getRoomRow(targetRoom);
+    int dy = targetRow - currentRow;
     
     unsigned long TURN_DURATION = 500; // ms to turn 90 degrees
     unsigned long TILE_DURATION = 500; // ms to move 1 unit (30cm)
     
-    // Move along Y axis
-    if (dy != 0) {
-        if (dy > 0) { // Target is South
-            if (currentHeading == 1) { addCommand(CMD_TURN_RIGHT, TURN_DURATION); currentHeading = 2; }
-            else if (currentHeading == 3) { addCommand(CMD_TURN_LEFT, TURN_DURATION); currentHeading = 2; }
-            
-            if (currentHeading == 2) addCommand(CMD_FORWARD, dy * TILE_DURATION);
-            else if (currentHeading == 0) addCommand(CMD_BACKWARD, dy * TILE_DURATION);
-        } else { // Target is North
-            int absDy = -dy;
-            if (currentHeading == 1) { addCommand(CMD_TURN_LEFT, TURN_DURATION); currentHeading = 0; }
-            else if (currentHeading == 3) { addCommand(CMD_TURN_RIGHT, TURN_DURATION); currentHeading = 0; }
-            
-            if (currentHeading == 0) addCommand(CMD_FORWARD, absDy * TILE_DURATION);
-            else if (currentHeading == 2) addCommand(CMD_BACKWARD, absDy * TILE_DURATION);
-        }
+    // If the robot is facing the room from a previous delivery, turn right to face straight down the hallway again
+    if (isFacingRoom) {
+        addCommand(CMD_TURN_RIGHT, TURN_DURATION);
+        isFacingRoom = false;
     }
     
-    // Move along X axis
-    if (dx != 0) {
-        if (dx > 0) { // Target is East
-            if (currentHeading == 0) { addCommand(CMD_TURN_RIGHT, TURN_DURATION); currentHeading = 1; }
-            else if (currentHeading == 2) { addCommand(CMD_TURN_LEFT, TURN_DURATION); currentHeading = 1; }
-            
-            if (currentHeading == 1) addCommand(CMD_FORWARD, dx * TILE_DURATION);
-            else if (currentHeading == 3) addCommand(CMD_BACKWARD, dx * TILE_DURATION);
-        } else { // Target is West
-            int absDx = -dx;
-            if (currentHeading == 0) { addCommand(CMD_TURN_LEFT, TURN_DURATION); currentHeading = 3; }
-            else if (currentHeading == 2) { addCommand(CMD_TURN_RIGHT, TURN_DURATION); currentHeading = 3; }
-            
-            if (currentHeading == 3) addCommand(CMD_FORWARD, absDx * TILE_DURATION);
-            else if (currentHeading == 1) addCommand(CMD_BACKWARD, absDx * TILE_DURATION);
-        }
+    // Move along Y axis (Hallway)
+    if (dy > 0) {
+        // Target is further down the hallway
+        addCommand(CMD_FORWARD, dy * TILE_DURATION);
+    } else if (dy < 0) {
+        // Target is behind us (e.g., returning Home). Drive backwards to avoid complex 180 turnarounds.
+        int absDy = -dy;
+        addCommand(CMD_BACKWARD, absDy * TILE_DURATION);
     }
     
     // Arrived at destination
     if (targetRoom == 0) {
         addCommand(CMD_HOME, 0);
     } else {
+        // Arrived at the correct row. Turn Left to face the room!
+        addCommand(CMD_TURN_LEFT, TURN_DURATION);
         addCommand(CMD_DELIVER, 0);
+        isFacingRoom = true; // Mark that we ended up facing the room
     }
     
-    // Update our internal map position to the new target
-    currentX = target.x;
-    currentY = target.y;
+    // Update internal position
+    currentRow = targetRow;
 }
 
 void FsmManager::executeNextCommand() {

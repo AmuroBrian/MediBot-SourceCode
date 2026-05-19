@@ -1,7 +1,7 @@
 #include "NavigationManager.h"
 #include "Config.h"
 
-NavigationManager::NavigationManager() {}
+NavigationManager::NavigationManager() : adxlFound(false) {}
 
 void NavigationManager::init() {
     pinMode(PIN_MOTOR_EN_L, OUTPUT);
@@ -11,6 +11,14 @@ void NavigationManager::init() {
     pinMode(PIN_MOTOR_IN3_R, OUTPUT);
     pinMode(PIN_MOTOR_IN4_R, OUTPUT);
     stop();
+
+    adxlFound = accel.begin();
+    if (adxlFound) {
+        Serial.println("ADXL345 Initialized.");
+        accel.setRange(ADXL345_RANGE_16_G);
+    } else {
+        Serial.println("ADXL345 NOT FOUND!");
+    }
 }
 
 void NavigationManager::setMotors(int leftSpeed, int rightSpeed) {
@@ -54,7 +62,11 @@ void NavigationManager::stop() {
 }
 
 void NavigationManager::moveForward(int speed) {
-    setMotors(speed, speed);
+    if (adxlFound) {
+        driveStraightCorrection(speed);
+    } else {
+        setMotors(speed, speed);
+    }
 }
 
 void NavigationManager::moveBackward(int speed) {
@@ -67,6 +79,32 @@ void NavigationManager::turnLeft(int speed) {
 
 void NavigationManager::turnRight(int speed) {
     setMotors(speed, -speed);
+}
+
+void NavigationManager::driveStraightCorrection(int baseSpeed) {
+    if (!adxlFound) {
+        setMotors(baseSpeed, baseSpeed);
+        return;
+    }
+    sensors_event_t event;
+    accel.getEvent(&event);
+    
+    // Basic proportional correction based on lateral (Y) acceleration
+    // event.acceleration.y is in m/s^2. 
+    // If robot slips/turns, lateral acceleration changes slightly.
+    float lateralAccel = event.acceleration.y;
+    int correction = (int)(lateralAccel * 10); // Kp = 10
+    
+    int leftS = baseSpeed + correction;
+    int rightS = baseSpeed - correction;
+    
+    // Constrain to positive
+    if (leftS > 255) leftS = 255;
+    if (leftS < 0) leftS = 0;
+    if (rightS > 255) rightS = 255;
+    if (rightS < 0) rightS = 0;
+    
+    setMotors(leftS, rightS);
 }
 
 void NavigationManager::followWall(int leftDist, int rightDist, int baseSpeed) {

@@ -23,6 +23,12 @@ void SensorManager::update() {
         delay(5);
         
         rightDistance = measureDistance(TRIG_RIGHT, ECHO_RIGHT);
+
+        Serial.print("Sensor Distances - Left: ");
+        Serial.print(leftDistance);
+        Serial.print(" cm | Right: ");
+        Serial.print(rightDistance);
+        Serial.println(" cm");
     }
 }
 
@@ -37,7 +43,10 @@ int SensorManager::measureDistance(uint8_t trigPin, uint8_t echoPin) {
     long duration = pulseIn(echoPin, HIGH, 30000);
     if (duration == 0) return 999; // No echo, assume clear
     
-    return duration * 0.034 / 2;
+    int distance = duration * 0.034 / 2;
+    if (distance <= 0) return 999; // Filter out false 0 readings from trigger noise
+    
+    return distance;
 }
 
 int SensorManager::getLeftDistance() const {

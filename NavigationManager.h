@@ -2,23 +2,29 @@
 #define NAVIGATION_MANAGER_H
 
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
 
 class NavigationManager {
 public:
     NavigationManager();
     void init();
+    void setMotors(int leftSpeed, int rightSpeed);
     
-    void stop();
+    // Core Movement
     void moveForward(int speed);
     void moveBackward(int speed);
     void turnLeft(int speed);
     void turnRight(int speed);
+    void stop();
     
-    // Advanced logic
-    void followWall(int leftDist, int rightDist, int baseSpeed);
+    void driveStraightCorrection(int baseSpeed);
+    void followWall(int leftDistance, int rightDistance, int baseSpeed);
 
 private:
-    void setMotors(int leftSpeed, int rightSpeed);
+    Adafruit_ADXL345_Unified accel;
+    bool adxlFound;
 };
 
 #endif // NAVIGATION_MANAGER_H

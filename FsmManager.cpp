@@ -118,10 +118,10 @@ void FsmManager::handleManualMove(String direction) {
             changeState(STATE_MANUAL_DRIVE, "Manual Drive");
         }
         
-        if (direction == "FORWARD") navManager->moveForward(255);
-        else if (direction == "BACKWARD") navManager->moveBackward(255);
-        else if (direction == "LEFT") navManager->turnLeft(255);
-        else if (direction == "RIGHT") navManager->turnRight(255);
+        if (direction == "FORWARD") navManager->moveForward(MAX_SPEED);
+        else if (direction == "BACKWARD") navManager->moveBackward(MAX_SPEED);
+        else if (direction == "LEFT") navManager->turnLeft(MAX_SPEED);
+        else if (direction == "RIGHT") navManager->turnRight(MAX_SPEED);
     }
 }
 
@@ -164,7 +164,7 @@ void FsmManager::generatePath(int targetRoom) {
     int dy = target.y - currentY;
     
     unsigned long TURN_DURATION = 500; // ms to turn 90 degrees
-    unsigned long TILE_DURATION = 1000; // ms to move 1 unit
+    unsigned long TILE_DURATION = 500; // ms to move 1 unit (30cm)
     
     // Move along Y axis
     if (dy != 0) {
@@ -226,10 +226,10 @@ void FsmManager::executeNextCommand() {
     isCommandPaused = false;
     
     switch (cmd.type) {
-        case CMD_FORWARD: navManager->moveForward(255); break;
-        case CMD_BACKWARD: navManager->moveBackward(255); break;
-        case CMD_TURN_LEFT: navManager->turnLeft(255); break;
-        case CMD_TURN_RIGHT: navManager->turnRight(255); break;
+        case CMD_FORWARD: navManager->moveForward(MAX_SPEED); break;
+        case CMD_BACKWARD: navManager->moveBackward(MAX_SPEED); break;
+        case CMD_TURN_LEFT: navManager->turnLeft(MAX_SPEED); break;
+        case CMD_TURN_RIGHT: navManager->turnRight(MAX_SPEED); break;
         case CMD_STOP: navManager->stop(); break;
         case CMD_DELIVER: 
             changeState(STATE_DELIVER_MEDICINE, "Arrived at Room " + String(currentRoom));
@@ -290,15 +290,20 @@ void FsmManager::handleExecuteCmd() {
 }
 
 void FsmManager::handleAvoidObstacle() {
-    navManager->stop();
-    if (!sensorManager->isObstacleAhead()) {
+    if (sensorManager->isObstacleAhead()) {
+        navManager->moveBackward(MAX_SPEED);
+        // Beep buzzer to indicate reverse due to obstacle
+        digitalWrite(PIN_BUZZER, HIGH);
+    } else {
         // Obstacle is gone. Resume command.
+        digitalWrite(PIN_BUZZER, LOW);
+        navManager->stop();
         currentCmdStartTime = millis();
         isCommandPaused = false;
         
         NavCommand cmd = commandQueue[currentCmdIndex];
-        if (cmd.type == CMD_FORWARD) navManager->moveForward(255);
-        else if (cmd.type == CMD_BACKWARD) navManager->moveBackward(255);
+        if (cmd.type == CMD_FORWARD) navManager->moveForward(MAX_SPEED);
+        else if (cmd.type == CMD_BACKWARD) navManager->moveBackward(MAX_SPEED);
         
         changeState(STATE_EXECUTE_CMD, "Path Clear");
     }

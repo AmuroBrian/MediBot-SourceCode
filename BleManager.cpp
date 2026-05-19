@@ -111,7 +111,7 @@ void BleManager::onWrite(BLECharacteristic* pCharacteristic) {
     }
 }
 
-void BleManager::sendStatusUpdate(String state, int room, int battery, String msg) {
+void BleManager::sendStatusUpdate(String state, int room, int battery, String msg, int leftDist, int rightDist) {
     if (!deviceConnected) return;
 
     StaticJsonDocument<256> doc;
@@ -120,6 +120,8 @@ void BleManager::sendStatusUpdate(String state, int room, int battery, String ms
     doc["currentCompartment"] = fsmManager->getCurrentCompartment();
     doc["battery"] = battery;
     doc["status"] = msg;
+    doc["leftDist"] = leftDist;
+    doc["rightDist"] = rightDist;
     
     char buffer[256];
     serializeJson(doc, buffer);

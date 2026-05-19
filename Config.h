@@ -26,6 +26,7 @@
 #define MAX_QUEUE_SIZE 10
 #define AVOID_DISTANCE_CM 5 // Distance to stop and avoid obstacle (3-5 cm)
 #define HALLWAY_WIDTH_CM 80  // Typical hallway width
+#define MAX_SPEED 220 // Reduced motor speed for stability
 
 // --- Robot States ---
 enum RobotState {

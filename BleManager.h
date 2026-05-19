@@ -20,7 +20,7 @@ class BleManager : public BLEServerCallbacks, public BLECharacteristicCallbacks 
 public:
     BleManager();
     void init(FsmManager* fsm);
-    void sendStatusUpdate(String state, int currentRoom, int battery, String statusMsg);
+    void sendStatusUpdate(String state, int currentRoom, int battery, String statusMsg, int leftDist, int rightDist);
     
     // Callbacks overrides
     void onConnect(BLEServer* pServer) override;

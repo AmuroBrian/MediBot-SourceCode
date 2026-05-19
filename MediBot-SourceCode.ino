@@ -75,7 +75,9 @@ void loop() {
             fsmManager.getCurrentStateString(),
             fsmManager.getCurrentRoom(),
             95, // Mock battery
-            fsmManager.getStatusMessage()
+            fsmManager.getStatusMessage(),
+            sensorManager.getLeftDistance(),
+            sensorManager.getRightDistance()
         );
     }
 }

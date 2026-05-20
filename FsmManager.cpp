@@ -262,8 +262,8 @@ void FsmManager::handleExecuteCmd() {
 
 void FsmManager::handleAvoidObstacle() {
     if (sensorManager->isObstacleAhead()) {
-        navManager->moveBackward(MAX_SPEED);
-        // Beep buzzer to indicate reverse due to obstacle
+        navManager->stop(); // Stop instead of reversing
+        // Beep buzzer continuously while obstacle is present
         digitalWrite(PIN_BUZZER, HIGH);
     } else {
         // Obstacle is gone. Resume command.

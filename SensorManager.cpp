@@ -58,6 +58,6 @@ int SensorManager::getRightDistance() const {
 }
 
 bool SensorManager::isObstacleAhead() const {
-    // Basic heuristic: if both sensors report a close object, it's a wall or obstacle ahead.
-    return (leftDistance < AVOID_DISTANCE_CM && rightDistance < AVOID_DISTANCE_CM);
+    // If EITHER sensor detects an obstacle within 5cm, trigger avoidance
+    return (leftDistance < AVOID_DISTANCE_CM || rightDistance < AVOID_DISTANCE_CM);
 }

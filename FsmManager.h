@@ -73,7 +73,6 @@ private:
     
     // Linear Map Tracking
     int currentRow;
-    bool isFacingRoom;
 
     // Command Queue
     NavCommand commandQueue[MAX_NAV_COMMANDS];

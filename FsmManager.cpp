@@ -8,7 +8,7 @@ FsmManager::FsmManager(BleManager* ble, SensorManager* sensor, NavigationManager
       currentState(STATE_IDLE), previousState(STATE_IDLE), 
       statusMessage("Ready"), numRoomsInQueue(0), currentQueueIndex(0), 
       currentRoom(0), currentCompartment(0), stateStartTime(0),
-      currentRow(0), isFacingRoom(false),
+      currentRow(0),
       cmdQueueSize(0), currentCmdIndex(0), isCommandPaused(false) {}
 
 void FsmManager::init() {
@@ -161,21 +161,14 @@ void FsmManager::generatePath(int targetRoom) {
     int targetRow = getRoomRow(targetRoom);
     int dy = targetRow - currentRow;
     
-    unsigned long TURN_DURATION = 500; // ms to turn 90 degrees
     unsigned long TILE_DURATION = 500; // ms to move 1 unit (30cm)
-    
-    // If the robot is facing the room from a previous delivery, turn right to face straight down the hallway again
-    if (isFacingRoom) {
-        addCommand(CMD_TURN_RIGHT, TURN_DURATION);
-        isFacingRoom = false;
-    }
     
     // Move along Y axis (Hallway)
     if (dy > 0) {
         // Target is further down the hallway
         addCommand(CMD_FORWARD, dy * TILE_DURATION);
     } else if (dy < 0) {
-        // Target is behind us (e.g., returning Home). Drive backwards to avoid complex 180 turnarounds.
+        // Target is behind us (e.g., returning Home). Drive backwards.
         int absDy = -dy;
         addCommand(CMD_BACKWARD, absDy * TILE_DURATION);
     }
@@ -184,10 +177,8 @@ void FsmManager::generatePath(int targetRoom) {
     if (targetRoom == 0) {
         addCommand(CMD_HOME, 0);
     } else {
-        // Arrived at the correct row. Turn Left to face the room!
-        addCommand(CMD_TURN_LEFT, TURN_DURATION);
+        // Arrived at the correct row. Just deliver while parked parallel to the room!
         addCommand(CMD_DELIVER, 0);
-        isFacingRoom = true; // Mark that we ended up facing the room
     }
     
     // Update internal position
